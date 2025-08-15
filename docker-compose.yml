@@ -1,0 +1,12 @@
+version: "3.9"
+services:
+  vuln-portal:
+    build: .
+    container_name: vuln-portal
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

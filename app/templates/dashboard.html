@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid md:grid-cols-4 gap-4">
+  <div class="glass glow-border p-4">
+    <div class="text-xs text-gray-400">Critical</div>
+    <div class="text-3xl font-bold text-red-400">{{ counts['CRITICAL'] }}</div>
+  </div>
+  <div class="glass glow-border p-4">
+    <div class="text-xs text-gray-400">High</div>
+    <div class="text-3xl font-bold text-orange-400">{{ counts['HIGH'] }}</div>
+  </div>
+  <div class="glass glow-border p-4">
+    <div class="text-xs text-gray-400">Medium</div>
+    <div class="text-3xl font-bold text-yellow-300">{{ counts['MEDIUM'] }}</div>
+  </div>
+  <div class="glass glow-border p-4">
+    <div class="text-xs text-gray-400">Low</div>
+    <div class="text-3xl font-bold text-green-300">{{ counts['LOW'] }}</div>
+  </div>
+</div>
+
+<div class="grid md:grid-cols-3 gap-4 mt-6">
+  <div class="md:col-span-2 glass glow-border p-4">
+    <div class="flex items-center justify-between mb-3">
+      <div class="text-sm text-gray-400">Vulnerabilities last 14 days</div>
+    </div>
+    <canvas id="trendChart" height="80"></canvas>
+  </div>
+  <div class="glass glow-border p-4">
+    <div class="text-sm text-gray-400">Totals</div>
+    <div class="mt-2">
+      <div class="flex justify-between"><span>Total</span><span class="font-semibold">{{ total }}</span></div>
+      <div class="flex justify-between"><span>Exploited (KEV)</span><span class="font-semibold text-pink-400">{{ exploited_count }}</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="glass glow-border p-4 mt-6">
+  <div class="flex items-center gap-2 mb-3">
+    <form method="get" action="/" class="flex gap-2">
+      <input type="text" name="q" value="{{ request.query_params.get('q') or '' }}" placeholder="Search CVE, vendor, product..." class="px-3 py-2 rounded bg-black/30 border border-white/20 text-sm">
+      <select name="severity" class="px-3 py-2 rounded bg-black/30 border border-white/20 text-sm">
+        <option value="">All severities</option>
+        {% for sev in ['CRITICAL','HIGH','MEDIUM','LOW','UNKNOWN'] %}
+        <option value="{{ sev }}" {% if request.query_params.get('severity')==sev %}selected{% endif %}>{{ sev }}</option>
+        {% endfor %}
+      </select>
+      <select name="exploited" class="px-3 py-2 rounded bg-black/30 border border-white/20 text-sm">
+        <option value="">Any exploited</option>
+        <option value="true" {% if request.query_params.get('exploited')=='true' %}selected{% endif %}>Exploited</option>
+        <option value="false" {% if request.query_params.get('exploited')=='false' %}selected{% endif %}>Not exploited</option>
+      </select>
+      <button class="px-3 py-2 rounded bg-cyan-500 text-black text-sm font-semibold">Filter</button>
+    </form>
+  </div>
+  <div class="overflow-auto">
+    <table class="w-full text-sm">
+      <thead class="text-gray-400">
+        <tr>
+          <th class="text-left p-2">CVE</th>
+          <th class="text-left p-2">Severity</th>
+          <th class="text-left p-2">CVSS</th>
+          <th class="text-left p-2">EPSS</th>
+          <th class="text-left p-2">Exploited</th>
+          <th class="text-left p-2">Published</th>
+          <th class="text-left p-2">Title</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in recent %}
+        <tr class="border-t border-white/10 hover:bg-white/5">
+          <td class="p-2"><a class="text-cyan-300 hover:underline" href="/vuln/{{ v.cve_id }}">{{ v.cve_id }}</a></td>
+          <td class="p-2">
+            {% set color = 'bg-gray-500' %}
+            {% if v.severity == 'CRITICAL' %}{% set color = 'bg-red-500' %}
+            {% elif v.severity == 'HIGH' %}{% set color = 'bg-orange-500' %}
+            {% elif v.severity == 'MEDIUM' %}{% set color = 'bg-yellow-400' %}
+            {% elif v.severity == 'LOW' %}{% set color = 'bg-green-500' %}
+            {% endif %}
+            <span class="badge {{ color }}/30 border-{{ color }} text-xs uppercase">{{ v.severity }}</span>
+          </td>
+          <td class="p-2">{{ "{:.1f}".format(v.cvss_score) if v.cvss_score is not none else "-" }}</td>
+          <td class="p-2">{{ "{:.3f}".format(v.epss_score) if v.epss_score is not none else "-" }}</td>
+          <td class="p-2">{% if v.exploited %}<span class="text-pink-400">Yes</span>{% else %}<span class="text-gray-400">No</span>{% endif %}</td>
+          <td class="p-2">{{ (v.published_at or '') | string }}</td>
+          <td class="p-2 text-gray-300">{{ v.title or (v.description[:80] ~ '...') if v.description else '' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  // Trend chart
+  const ctx = document.getElementById('trendChart');
+  const labels = {{ trend_labels | tojson }};
+  const data = {{ trend_data | tojson }};
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'New CVEs',
+        data,
+        borderColor: '#00f5ff',
+        backgroundColor: 'rgba(0,245,255,0.15)',
+        tension: 0.35,
+        fill: true,
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#9aa0aa' }, grid: { color: 'rgba(255,255,255,0.06)'} },
+        y: { ticks: { color: '#9aa0aa' }, grid: { color: 'rgba(255,255,255,0.06)'} },
+      }
+    }
+  });
+</script>
+{% endblock %}

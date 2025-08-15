@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="glass glow-border p-6">
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-bold">{{ v.cve_id }}</h1>
+    <div class="flex items-center gap-2">
+      {% if v.exploited %}<span class="badge text-pink-400 border-pink-500/40">Exploited (KEV)</span>{% endif %}
+      {% if v.severity %}<span class="badge">{{ v.severity }}</span>{% endif %}
+    </div>
+  </div>
+
+  <div class="grid md:grid-cols-3 gap-6 mt-4">
+    <div class="md:col-span-2">
+      <p class="text-gray-300 whitespace-pre-wrap">{{ v.description }}</p>
+      {% if v.references and v.references.urls %}
+      <div class="mt-4">
+        <div class="text-sm text-gray-400 mb-2">References</div>
+        <ul class="list-disc ml-5">
+          {% for u in v.references.urls %}
+          <li><a class="text-cyan-300 hover:underline" href="{{ u }}" target="_blank" rel="noopener">{{ u }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+    <div>
+      <div class="text-sm text-gray-400">CVSS</div>
+      <div class="mt-1">Score: <span class="font-semibold">{{ v.cvss_score if v.cvss_score is not none else "-" }}</span></div>
+      <div class="mt-1">Vector: <span class="font-mono text-xs">{{ v.cvss_vector or "-" }}</span></div>
+
+      <div class="mt-4 text-sm text-gray-400">EPSS</div>
+      <div class="mt-1">Score: <span class="font-semibold">{{ "{:.3f}".format(v.epss_score) if v.epss_score is not none else "-" }}</span></div>
+
+      <div class="mt-4 text-sm text-gray-400">Metadata</div>
+      <div class="mt-1">Vendor: <span class="">{{ v.vendor or "-" }}</span></div>
+      <div class="mt-1">Product: <span class="">{{ v.product or "-" }}</span></div>
+      <div class="mt-1">CWE: <span class="">{{ v.cwe or "-" }}</span></div>
+      <div class="mt-1">Published: <span class="">{{ v.published_at or "-" }}</span></div>
+      <div class="mt-1">Updated: <span class="">{{ v.updated_at or "-" }}</span></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
