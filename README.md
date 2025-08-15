@@ -1,6 +1,6 @@
 # Vuln Portal
 
-A FastAPI-powered portal that aggregates new vulnerabilities with scoring and an “insane” neon/glassmorphism UI. Sources include:
+A FastAPI-powered portal that aggregates new vulnerabilities with scoring and a neon/glassmorphism UI. Sources include:
 - NVD (CVEs + CVSS v3.x)
 - CISA Known Exploited Vulnerabilities (KEV)
 - EPSS probability enrichment
